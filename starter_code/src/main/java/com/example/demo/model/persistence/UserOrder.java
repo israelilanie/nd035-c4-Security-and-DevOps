@@ -1,6 +1,7 @@
 package com.example.demo.model.persistence;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -76,8 +77,9 @@ public class UserOrder {
 
 	public static UserOrder createFromCart(Cart cart) {
 		UserOrder order = new UserOrder();
-		order.setItems(cart.getItems().stream().collect(Collectors.toList()));
-		order.setTotal(cart.getTotal());
+		order.setItems(cart.getItems() == null ? new ArrayList<>()
+				: cart.getItems().stream().collect(Collectors.toList()));
+		order.setTotal(cart.getTotal() == null ? BigDecimal.ZERO : cart.getTotal());
 		order.setUser(cart.getUser());
 		return order;
 	}

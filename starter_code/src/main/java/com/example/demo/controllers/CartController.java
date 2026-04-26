@@ -3,9 +3,9 @@ package com.example.demo.controllers;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,18 +22,22 @@ import com.example.demo.model.requests.ModifyCartRequest;
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
-	
-	@Autowired
-	private UserRepository userRepository;
-	
-	@Autowired
-	private CartRepository cartRepository;
-	
-	@Autowired
-	private ItemRepository itemRepository;
+
+	private final UserRepository userRepository;
+	private final CartRepository cartRepository;
+	private final ItemRepository itemRepository;
+
+	public CartController(UserRepository userRepository, CartRepository cartRepository, ItemRepository itemRepository) {
+		this.userRepository = userRepository;
+		this.cartRepository = cartRepository;
+		this.itemRepository = itemRepository;
+	}
 	
 	@PostMapping("/addToCart")
-	public ResponseEntity<Cart> addTocart(@RequestBody ModifyCartRequest request) {
+	public ResponseEntity<Cart> addTocart(@RequestBody ModifyCartRequest request, Authentication authentication) {
+		if (!isCurrentUser(request.getUsername(), authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -50,7 +54,10 @@ public class CartController {
 	}
 	
 	@PostMapping("/removeFromCart")
-	public ResponseEntity<Cart> removeFromcart(@RequestBody ModifyCartRequest request) {
+	public ResponseEntity<Cart> removeFromcart(@RequestBody ModifyCartRequest request, Authentication authentication) {
+		if (!isCurrentUser(request.getUsername(), authentication)) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+		}
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user == null) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -65,5 +72,8 @@ public class CartController {
 		cartRepository.save(cart);
 		return ResponseEntity.ok(cart);
 	}
-		
+
+	private boolean isCurrentUser(String username, Authentication authentication) {
+		return authentication != null && authentication.getName().equals(username);
+	}
 }
